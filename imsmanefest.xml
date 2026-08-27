@@ -1,0 +1,28 @@
+<!-- STREAMING_CHUNK:Metadata Versi SCORM -->
+<metadata>
+    <schema>ADL SCORM</schema>
+    <schemaversion>1.2</schemaversion>
+</metadata>
+
+<!-- STREAMING_CHUNK:Struktur Organisasi dan Judul Paket -->
+<organizations default="org_biologi_sma">
+    <organization identifier="org_biologi_sma">
+        <!-- Judul Paket yang akan muncul di LMS -->
+        <title>Biologi SMA Kelas XII</title>
+        
+        <!-- STREAMING_CHUNK:Item SCO dan Pengaturan Mastery Score -->
+        <item identifier="item_fotosintesis" identifierref="res_fotosintesis" isvisible="true">
+            <title>Fotosintesis Interaktif</title>
+            <!-- Menetapkan standar kelulusan (KKM) ke 75 -->
+            <adlcp:masteryscore>75</adlcp:masteryscore>
+        </item>
+    </organization>
+</organizations>
+
+<!-- STREAMING_CHUNK:Definisi Resource dan File Utama -->
+<resources>
+    <!-- Mendefinisikan index.html sebagai resource utama (SCO) -->
+    <resource identifier="res_fotosintesis" type="webcontent" adlcp:scormtype="sco" href="index.html">
+        <file href="index.html" />
+    </resource>
+</resources>

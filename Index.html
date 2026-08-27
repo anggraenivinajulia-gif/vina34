@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biologi SMA - Dekarboksilasi Oksidatif</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        mito: {
+                            light: '#fb923c', // orange-400
+                            DEFAULT: '#ea580c', // orange-600
+                            dark: '#c2410c', // orange-700
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'bounce-slight': 'bounceSlight 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0', transform: 'translateY(10px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        bounceSlight: {
+                            '0%, 100%': { transform: 'translateY(-5%)' },
+                            '50%': { transform: 'translateY(0)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        
+        /* Hilangkan scrollbar pada navigasi horizontal */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Drag and Drop / Game styles */
+        .sim-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .sim-item:hover { transform: scale(1.05); }
+        .sim-item.selected { border-color: #ea580c; background-color: #fff7ed; box-shadow: 0 0 0 2px #ea580c; }
+        .dark .sim-item.selected { background-color: #7c2d12; border-color: #fb923c; box-shadow: 0 0 0 2px #fb923c; }
+        
+        .sim-zone { border: 2px dashed #cbd5e1; transition: all 0.3s; }
+        .sim-zone.active-target { border-color: #ea580c; background-color: rgba(234, 88, 12, 0.1); }
+        .dark .sim-zone { border-color: #475569; }
+        .dark .sim-zone.active-target { border-color: #fb923c; background-color: rgba(251, 146, 60, 0.1); }
+        
+        /* Quiz styles */
+        .option-btn { transition: all 0.2s; }
+        .option-btn.selected { border-color: #ea580c; background-color: #fff7ed; }
+        .dark .option-btn.selected { background-color: #7c2d12; border-color: #fb923c;}
+        .option-btn.correct { border-color: #22c55e; background-color: #f0fdf4; color: #166534; }
+        .dark .option-btn.correct { background-color: #14532d; border-color: #4ade80; color: #dcfce3; }
+        .option-btn.wrong { border-color: #ef4444; background-color: #fef2f2; color: #991b1b; }
+        .dark .option-btn.wrong { background-color: #7f1d1d; border-color: #f87171; color: #fee2e2; }
+
+        .carbon-orb { width: 24px; height: 24px; border-radius: 50%; background-color: #475569; display: inline-block; margin: 0 2px; }
+        .dark .carbon-orb { background-color: #94a3b8; }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Header & Navigasi -->
+    <header class="bg-white dark:bg-slate-800 shadow-sm sticky top-0 z-50 border-b border-slate-200 dark:border-slate-700">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center h-16">
+            <div class="flex items-center gap-2">
+                <svg class="w-8 h-8 text-mito" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                </svg>
+                <h1 class="font-bold text-xl tracking-tight hidden sm:block">BioEdu: Respirasi Aerob</h1>
+            </div>
+            
+            <nav class="flex-1 flex justify-center space-x-1 sm:space-x-2 overflow-x-auto no-scrollbar px-2">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-btn px-3 py-2 text-sm font-semibold rounded-md bg-mito text-white shadow-sm transition">Dashboard</button>
+                <button onclick="switchTab('materi')" id="tab-materi" class="tab-btn px-3 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 transition">Materi</button>
+                <button onclick="switchTab('simulasi')" id="tab-simulasi" class="tab-btn px-3 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 transition">Simulasi</button>
+                <button onclick="switchTab('evaluasi')" id="tab-evaluasi" class="tab-btn px-3 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 transition">Evaluasi</button>
+                <button onclick="switchTab('refleksi')" id="tab-refleksi" class="tab-btn px-3 py-2 text-sm font-medium rounded-md text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700 transition">Refleksi</button>
+            </nav>
+
+            <button id="theme-toggle" class="p-2 text-slate-500 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+                <svg id="theme-toggle-light-icon" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" fill-rule="evenodd" clip-rule="evenodd"></path></svg>
+                <svg id="theme-toggle-dark-icon" class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path></svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-5xl mx-auto w-full px-4 sm:px-6 py-8">
+        
+        <!-- DASHBOARD TAB -->
+        <section id="content-dashboard" class="tab-content animate-fade-in block">
+            <div class="bg-gradient-to-r from-mito via-mito-light to-orange-300 dark:from-slate-800 dark:via-slate-800 dark:to-mito-dark rounded-2xl shadow-lg p-8 mb-8 text-center text-white relative overflow-hidden">
+                <!-- Dekorasi -->
+                <div class="absolute -right-10 -top-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl"></div>
+                <div class="absolute -left-10 -bottom-10 w-32 h-32 bg-orange-900 opacity-20 rounded-full blur-xl"></div>
+                
+                <h2 class="text-3xl sm:text-4xl font-bold mb-4 relative z-10">Dekarboksilasi Oksidatif</h2>
+                <p class="text-white/90 max-w-2xl mx-auto text-lg relative z-10">
+                    Jembatan krusial pembentuk energi! Pelajari bagaimana Asam Piruvat bersiap memasuki Siklus Krebs di dalam Mitokondria.
+                </p>
+                <div class="mt-8 flex justify-center gap-4 relative z-10">
+                    <button onclick="switchTab('materi')" class="px-8 py-3 bg-white text-mito hover:bg-slate-50 font-bold rounded-full shadow-lg transition transform hover:-translate-y-1">Mulai Materi</button>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow border border-slate-100 dark:border-slate-700">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                        <svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Kilas Balik
+                    </h3>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-3">
+                        Sebelumnya pada tahap <strong>Glikolisis</strong> (di sitoplasma), 1 molekul Glukosa (6 Karbon) telah dipecah menjadi <strong>2 molekul Asam Piruvat</strong> (3 Karbon).
+                    </p>
+                    <p class="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                        Namun, Asam Piruvat tidak bisa langsung masuk ke tahap selanjutnya (Siklus Krebs). Ia harus "didandani" dan diubah bentuknya terlebih dahulu melalui tahap transisi yang disebut <strong>Dekarboksilasi Oksidatif</strong>.
+                    </p>
+                </div>
+                
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow border border-slate-100 dark:border-slate-700">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                        <svg class="w-6 h-6 text-mito" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                        Indikator Pencapaian
+                    </h3>
+                    <ul class="space-y-3 text-sm text-slate-600 dark:text-slate-400">
+                        <li class="flex items-start gap-2">
+                            <span class="text-mito font-bold mt-0.5">✓</span> Memahami pengertian dan tujuan dekarboksilasi oksidatif.
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-mito font-bold mt-0.5">✓</span> Mengidentifikasi tempat terjadinya proses ini pada sel eukariotik.
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-mito font-bold mt-0.5">✓</span> Menganalisis substrat awal dan produk akhir yang dihasilkan.
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-mito font-bold mt-0.5">✓</span> Menghitung jumlah ATP, NADH, dan CO2 yang dihasilkan dari 1 molekul glukosa.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- SCORM Status Indicator -->
+            <div id="scorm-status-panel" class="mt-8 p-4 bg-slate-100 dark:bg-slate-800 rounded-lg text-center shadow-inner hidden border border-slate-200 dark:border-slate-700">
+                <p class="text-sm text-slate-600 dark:text-slate-400 font-medium">Status Koneksi LMS: <span id="lms-connection" class="font-bold text-yellow-600">Menghubungkan...</span></p>
+            </div>
+        </section>
+
+        <!-- MATERI TAB -->
+        <section id="content-materi" class="tab-content hidden animate-fade-in">
+            <h2 class="text-3xl font-bold mb-6 text-center text-slate-800 dark:text-slate-100 border-b pb-4 border-slate-200 dark:border-slate-700">Teori Dekarboksilasi Oksidatif (Tahap Transisi)</h2>
+            
+            <div class="space-y-6">
+                <!-- Konsep Dasar -->
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border-l-4 border-mito">
+                    <h3 class="text-xl font-bold mb-3 text-slate-800 dark:text-slate-100">Apa itu Dekarboksilasi Oksidatif?</h3>
+                    <p class="text-slate-600 dark:text-slate-400 mb-4 leading-relaxed text-sm">
+                        Secara harfiah, <strong>Dekarboksilasi</strong> berarti pelepasan karbon (dalam bentuk CO2), dan <strong>Oksidatif</strong> berarti terjadi pelepasan elektron (reaksi oksidasi) yang ditangkap oleh NAD+ menjadi NADH. Proses ini adalah reaksi antara/transisi sebelum Siklus Krebs dimulai.
+                    </p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                        <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg text-center border border-slate-200 dark:border-slate-600">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase mb-1">Tempat</p>
+                            <p class="font-bold text-sm text-slate-800 dark:text-slate-100">Matriks Mitokondria</p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg text-center border border-slate-200 dark:border-slate-600">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase mb-1">Enzim Utama</p>
+                            <p class="font-bold text-sm text-slate-800 dark:text-slate-100">Piruvat Dehidrogenase</p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg text-center border border-slate-200 dark:border-slate-600">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase mb-1">Input (1 Glukosa)</p>
+                            <p class="font-bold text-sm text-slate-800 dark:text-slate-100">2 Asam Piruvat</p>
+                        </div>
+                        <div class="bg-slate-50 dark:bg-slate-700 p-4 rounded-lg text-center border border-slate-200 dark:border-slate-600">
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase mb-1">Output</p>
+                            <p class="font-bold text-sm text-slate-800 dark:text-slate-100">2 Asetil Ko-A</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reaksi Kimia -->
+                <div class="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm">
+                    <h3 class="text-xl font-bold mb-4 text-slate-800 dark:text-slate-100">Persamaan Reaksi</h3>
+                    <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">Reaksi yang terjadi untuk <strong>1 molekul Asam Piruvat</strong>:</p>
+                    
+                    <div class="bg-slate-800 dark:bg-slate-900 p-6 rounded-xl text-center overflow-x-auto shadow-inner">
+                        <p class="font-mono text-base md:text-lg text-slate-200 whitespace-nowrap flex items-center justify-center gap-2">
+                            <span class="px-2 py-1 bg-red-900/50 rounded border border-red-500/30 text-red-200">Asam Piruvat (3C)</span>
+                            <span>+</span>
+                            <span class="px-2 py-1 bg-blue-900/50 rounded border border-blue-500/30 text-blue-200">Ko-A</span>
+                            <span>+</span>
+                            <span class="px-2 py-1 bg-purple-900/50 rounded border border-purple-500/30 text-purple-200">NAD<sup>+</sup></span>
+                        </p>
+                        <p class="my-2 text-mito font-bold text-xl">&darr;</p>
+                        <p class="font-mono text-base md:text-lg text-slate-200 whitespace-nowrap flex items-center justify-center gap-2">
+                            <span class="px-2 py-1 bg-green-900/50 rounded border border-green-500/30 text-green-200 font-bold">Asetil Ko-A (2C)</span>
+                            <span>+</span>
+                            <span class="px-2 py-1 bg-gray-700 rounded border border-gray-500 text-gray-300">CO<sub>2</sub></span>
+                            <span>+</span>
+                            <span class="px-2 py-1 bg-yellow-900/50 rounded border border-yellow-500/30 text-yellow-200">NADH</span>
+                            <span>+ H<sup>+</sup></span>
+                        </p>
+                    </div>
+                    <div class="mt-4 p-4 bg-orange-50 dark:bg-orange-950/30 rounded-lg text-sm text-slate-700 dark:text-slate-300 border border-orange-200 dark:border-orange-900">
+                        <strong>Ingat!</strong> Karena 1 molekul glukosa menghasilkan 2 molekul Asam Piruvat, maka hasil total dekarboksilasi oksidatif untuk 1 glukosa dikali dua menjadi: <span class="font-bold text-mito">2 Asetil Ko-A, 2 CO₂, dan 2 NADH.</span> Tidak ada ATP yang dihasilkan secara langsung pada tahap ini.
+                    </div>
+                </div>
+
+                <div class="text-center pt-4">
+                    <button onclick="switchTab('simulasi')" class="px-6 py-3 bg-slate-800 hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-medium rounded-lg shadow-md transition flex items-center gap-2 mx-auto">
+                        Coba Perakitan Reaksi 
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SIMULASI TAB -->
+        <section id="content-simulasi" class="tab-content hidden animate-fade-in">
+            <h2 class="text-2xl font-bold mb-2 text-slate-800 dark:text-slate-100">Simulasi: Laboratorium Matriks</h2>
+            <p class="text-slate-600 dark:text-slate-400 mb-6 text-sm border-b pb-4 border-slate-200 dark:border-slate-700">Bangun molekul Asetil Ko-A. Klik bahan dari inventori secara berurutan untuk menyelesaikan reaksi transisi.</p>
+
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-6 flex flex-col md:flex-row gap-8">
+                
+                <!-- Inventory Kiri -->
+                <div class="md:w-1/3 flex flex-col gap-3">
+                    <h3 class="font-bold text-sm uppercase text-slate-500 mb-2">Bahan Baku (Pilih)</h3>
+                    
+                    <button id="btn-piruvat" onclick="simSelect('piruvat')" class="sim-item w-full text-left p-3 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 hover:border-mito flex items-center justify-between">
+                        <div>
+                            <p class="font-bold">Asam Piruvat</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Molekul 3 Karbon (C3)</p>
+                        </div>
+                        <div class="flex"><span class="carbon-orb"></span><span class="carbon-orb"></span><span class="carbon-orb"></span></div>
+                    </button>
+
+                    <button id="btn-nad" onclick="simSelect('nad')" class="sim-item w-full text-left p-3 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 hover:border-mito flex items-center justify-between opacity-50 pointer-events-none transition-opacity">
+                        <div>
+                            <p class="font-bold">NAD<sup>+</sup></p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Koenzim Oksidator</p>
+                        </div>
+                        <div class="text-xl font-bold text-blue-500">+</div>
+                    </button>
+
+                    <button id="btn-koa" onclick="simSelect('koa')" class="sim-item w-full text-left p-3 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 hover:border-mito flex items-center justify-between opacity-50 pointer-events-none transition-opacity">
+                        <div>
+                            <p class="font-bold">Koenzim A (Ko-A)</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Gugus pengangkut</p>
+                        </div>
+                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                    </button>
+                </div>
+
+                <!-- Reaktor Kanan -->
+                <div class="md:w-2/3 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col items-center justify-center relative min-h-[300px] shadow-inner">
+                    <p class="absolute top-4 left-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Matriks Mitokondria</p>
+                    <button onclick="resetSim()" class="absolute top-4 right-4 text-xs px-2 py-1 bg-slate-200 dark:bg-slate-700 rounded hover:bg-slate-300 dark:hover:bg-slate-600 transition">Reset</button>
+
+                    <!-- Area Reaksi -->
+                    <div id="reaction-chamber" class="w-full max-w-sm flex flex-col items-center gap-6 mt-6">
+                        
+                        <!-- Tempat Asam Piruvat -->
+                        <div id="slot-piruvat" class="sim-zone w-full h-16 rounded-lg flex items-center justify-center text-slate-400 text-sm">
+                            1. Masukkan Asam Piruvat
+                        </div>
+
+                        <!-- Tempat Proses Transisi (Awalnya tersembunyi) -->
+                        <div id="process-area" class="w-full flex justify-between items-center hidden transition-all duration-500">
+                            <!-- Tempat NAD+ -->
+                            <div id="slot-nad" class="sim-zone w-2/5 h-16 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs text-center p-2">
+                                2. Tambahkan NAD+
+                            </div>
+                            <!-- Enzim -->
+                            <div class="text-xs font-bold text-mito px-2 text-center animate-bounce-slight">
+                                <p>Enzim Piruvat</p>
+                                <p>Dehidrogenase</p>
+                            </div>
+                            <!-- Tempat KoA -->
+                            <div id="slot-koa" class="sim-zone w-2/5 h-16 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs text-center p-2">
+                                3. Masukkan Ko-A
+                            </div>
+                        </div>
+
+                        <!-- Hasil Akhir -->
+                        <div id="result-area" class="w-full hidden flex-col items-center gap-2 mt-4 pt-4 border-t border-slate-300 dark:border-slate-600">
+                            <h4 class="font-bold text-green-600 dark:text-green-400 text-lg">Asetil Ko-A Berhasil Dibuat!</h4>
+                            <div class="flex gap-4 text-sm mt-2">
+                                <div class="bg-white dark:bg-slate-800 px-3 py-2 rounded shadow border border-green-200 dark:border-green-800 flex items-center gap-2">
+                                    <span class="font-bold">Asetil Ko-A</span>
+                                    <div class="flex"><span class="carbon-orb"></span><span class="carbon-orb"></span></div>
+                                </div>
+                                <div class="bg-white dark:bg-slate-800 px-3 py-2 rounded shadow border border-gray-200 dark:border-gray-700 flex flex-col items-center">
+                                    <span class="text-xs text-gray-500">Dilepas</span>
+                                    <span class="font-bold text-gray-700 dark:text-gray-300">CO<sub>2</sub></span>
+                                </div>
+                                <div class="bg-white dark:bg-slate-800 px-3 py-2 rounded shadow border border-yellow-200 dark:border-yellow-900 flex flex-col items-center">
+                                    <span class="text-xs text-gray-500">Energi</span>
+                                    <span class="font-bold text-yellow-600 dark:text-yellow-500">NADH</span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-center text-slate-500 mt-2">Senyawa 2 Karbon ini sekarang siap memasuki Siklus Krebs.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="sim-feedback" class="mt-4 p-4 rounded-lg bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-sm font-medium text-center transition-opacity">
+                Pilih Asam Piruvat terlebih dahulu untuk memulai reaksi.
+            </div>
+        </section>
+
+        <!-- EVALUASI TAB -->
+        <section id="content-evaluasi" class="tab-content hidden animate-fade-in">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-2xl font-bold mb-2 text-slate-800 dark:text-slate-100">Evaluasi Pemahaman</h2>
+                <p class="text-slate-600 dark:text-slate-400 mb-6 border-b pb-4 border-slate-200 dark:border-slate-700 text-sm">Pilih jawaban yang paling tepat. Nilai akan digabungkan dengan bagian refleksi.</p>
+
+                <div id="quiz-container" class="space-y-6">
+                    <!-- Soal 1 -->
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 quiz-question" data-question="1">
+                        <p class="font-semibold mb-4 text-slate-800 dark:text-slate-200">1. Tahap dekarboksilasi oksidatif pada eukariotik terjadi di...</p>
+                        <div class="space-y-2 text-sm">
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 1, 'A')">A. Sitoplasma</button>
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 1, 'B')">B. Membran dalam mitokondria (Krista)</button>
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 1, 'C')">C. Matriks Mitokondria</button>
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 1, 'D')">D. Stroma Kloroplas</button>
+                        </div>
+                    </div>
+
+                    <!-- Soal 2 -->
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 quiz-question" data-question="2">
+                        <p class="font-semibold mb-4 text-slate-800 dark:text-slate-200">2. Produk akhir dekarboksilasi oksidatif dari penguraian 1 molekul glukosa (2 piruvat) adalah...</p>
+                        <div class="space-y-2 text-sm">
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 2, 'A')">A. 2 Asetil Ko-A, 2 CO2, 2 ATP</button>
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 2, 'B')">B. 2 Asetil Ko-A, 2 CO2, 2 NADH</button>
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 2, 'C')">C. 1 Asetil Ko-A, 1 CO2, 1 NADH</button>
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 2, 'D')">D. Asam Sitrat dan ATP</button>
+                        </div>
+                    </div>
+
+                     <!-- Soal 3 -->
+                     <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 quiz-question" data-question="3">
+                        <p class="font-semibold mb-4 text-slate-800 dark:text-slate-200">3. Perubahan Asam Piruvat menjadi Asetil Ko-A melibatkan pengurangan jumlah atom karbon. Karbon yang lepas tersebut akan membentuk senyawa...</p>
+                        <div class="space-y-2 text-sm">
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 3, 'A')">A. Karbon Monoksida (CO)</button>
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 3, 'B')">B. Glukosa (C6H12O6)</button>
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 3, 'C')">C. Karbon Dioksida (CO2)</button>
+                            <button class="option-btn w-full text-left p-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700" onclick="selectOption(this, 3, 'D')">D. Oksigen (O2)</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 text-center">
+                    <button onclick="switchTab('refleksi')" class="px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white dark:bg-slate-600 dark:hover:bg-slate-500 rounded-lg shadow-md transition font-medium">Lanjut ke Refleksi &gt;&gt;</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- REFLEKSI TAB -->
+        <section id="content-refleksi" class="tab-content hidden animate-fade-in">
+            <div class="max-w-3xl mx-auto">
+                <h2 class="text-2xl font-bold mb-2 text-slate-800 dark:text-slate-100">Refleksi Kritis (Benar/Salah)</h2>
+                <p class="text-slate-600 dark:text-slate-400 mb-6 border-b pb-4 border-slate-200 dark:border-slate-700 text-sm">Evaluasi pernyataan berikut untuk mematapkan konsep dekarboksilasi oksidatif.</p>
+
+                <div id="tf-container" class="space-y-6">
+                    <!-- Pernyataan 1 -->
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 tf-question" data-question="4">
+                        <p class="font-medium mb-4 text-slate-800 dark:text-slate-200">Pernyataan 1: Kompleks enzim Piruvat Dehidrogenase bertanggung jawab mengkatalisis pengubahan asam piruvat menjadi asetil Ko-A.</p>
+                        <div class="flex gap-4 text-sm font-medium">
+                            <button class="tf-btn flex-1 py-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="selectTF(this, 4, 'T')">BENAR</button>
+                            <button class="tf-btn flex-1 py-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="selectTF(this, 4, 'F')">SALAH</button>
+                        </div>
+                    </div>
+
+                    <!-- Pernyataan 2 -->
+                    <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 tf-question" data-question="5">
+                        <p class="font-medium mb-4 text-slate-800 dark:text-slate-200">Pernyataan 2: Sama seperti glikolisis, tahap dekarboksilasi oksidatif secara langsung menghasilkan energi dalam bentuk ATP bebas.</p>
+                        <div class="flex gap-4 text-sm font-medium">
+                            <button class="tf-btn flex-1 py-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="selectTF(this, 5, 'T')">BENAR</button>
+                            <button class="tf-btn flex-1 py-3 rounded-lg border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 transition" onclick="selectTF(this, 5, 'F')">SALAH</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-10 bg-slate-100 dark:bg-slate-800/80 p-8 rounded-2xl text-center border border-slate-200 dark:border-slate-700">
+                    <h3 class="text-xl font-bold mb-2 text-slate-800 dark:text-slate-100">Siap Menyimpan Nilai?</h3>
+                    <p class="text-sm mb-6 text-slate-600 dark:text-slate-400">Pastikan Anda telah menjawab semua soal (3 Pilihan Ganda & 2 Benar/Salah) sebelum mengirim hasil ke sistem (LMS).</p>
+                    <button onclick="submitScore()" id="btn-submit" class="px-8 py-3 bg-mito hover:bg-mito-dark text-white font-bold rounded-lg shadow-lg transition transform hover:scale-105 w-full sm:w-auto">Kirim & Simpan Nilai (SCORM)</button>
+                    
+                    <div id="result-display" class="hidden mt-6 p-6 rounded-xl">
+                        <h4 class="text-3xl font-bold" id="final-score-text">Skor: 0/100</h4>
+                        <p id="final-status-text" class="font-medium mt-2 text-lg"></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 py-6 mt-auto">
+        <div class="max-w-6xl mx-auto px-4 text-center text-sm text-slate-500 dark:text-slate-400">
+            &copy; 2026 Media Pembelajaran Biologi Interaktif (SCORM 1.2 Compliant)
+        </div>
+    </footer>
+
+    <!-- Modal Peringatan Custom (Pengganti fungsi alert standar) -->
+    <div id="custom-modal" class="fixed inset-0 bg-black/60 hidden flex items-center justify-center z-[100] backdrop-blur-sm transition-opacity">
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-2xl max-w-sm w-full mx-4 transform scale-95 transition-transform" id="modal-content">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="p-2 bg-slate-100 dark:bg-slate-700 rounded-full text-mito">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <h3 id="modal-title" class="text-lg font-bold text-slate-900 dark:text-white">Pesan</h3>
+            </div>
+            <p id="modal-message" class="text-slate-600 dark:text-slate-300 mb-6 text-sm leading-relaxed"></p>
+            <div class="flex justify-end">
+                <button onclick="closeModal()" class="px-5 py-2 bg-mito hover:bg-mito-dark text-white rounded-lg font-medium transition">Mengerti</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. UI & Theme Logic
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+        const html = document.documentElement;
+
+        // Cek LocalStorage atau preferensi OS
+        if (localStorage.getItem('color-theme') === 'dark' || (!('color-theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            html.classList.add('dark');
+            darkIcon.classList.add('hidden');
+            lightIcon.classList.remove('hidden');
+        } else {
+            html.classList.remove('dark');
+        }
+
+        themeToggleBtn.addEventListener('click', function() {
+            darkIcon.classList.toggle('hidden');
+            lightIcon.classList.toggle('hidden');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('color-theme', 'light');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('color-theme', 'dark');
+            }
+        });
+
+        // Tab Switching Function
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById('content-' + tabId).classList.remove('hidden');
+            
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-mito', 'text-white', 'shadow-sm');
+                btn.classList.add('text-slate-600', 'dark:text-slate-300');
+            });
+            
+            const activeBtn = document.getElementById('tab-' + tabId);
+            activeBtn.classList.remove('text-slate-600', 'dark:text-slate-300');
+            activeBtn.classList.add('bg-mito', 'text-white', 'shadow-sm');
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Custom Modal Logic
+        function showModal(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-message').textContent = message;
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => content.classList.remove('scale-95'), 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('custom-modal');
+            const content = document.getElementById('modal-content');
+            content.classList.add('scale-95');
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        }
+
+        // 2. Simulasi Perakitan Reaksi (State Machine)
+        let simState = 0; // 0: Start, 1: Piruvat added, 2: NAD+ added, 3: KoA added (Done)
+        const feedbackEl = document.getElementById('sim-feedback');
+
+        function simSelect(itemType) {
+            if (itemType === 'piruvat' && simState === 0) {
+                // Step 1
+                simState = 1;
+                document.getElementById('btn-piruvat').classList.add('opacity-50', 'pointer-events-none', 'ring-2', 'ring-green-500');
+                
+                const slotPiruvat = document.getElementById('slot-piruvat');
+                slotPiruvat.innerHTML = `<div class="bg-white dark:bg-slate-700 px-4 py-2 rounded shadow-sm border border-slate-300 flex items-center gap-2 font-bold text-slate-800 dark:text-slate-100">
+                    Asam Piruvat <div class="flex"><span class="carbon-orb"></span><span class="carbon-orb"></span><span class="carbon-orb"></span></div>
+                </div>`;
+                slotPiruvat.classList.replace('border-dashed', 'border-solid');
+                slotPiruvat.style.borderColor = '#fb923c';
+
+                // Unlock next items
+                document.getElementById('btn-nad').classList.remove('opacity-50', 'pointer-events-none');
+                document.getElementById('process-area').classList.remove('hidden');
+                
+                feedbackEl.textContent = "Bagus! Asam Piruvat sudah masuk. Sekarang butuh Oksidator (NAD+) untuk menarik elektron.";
+                feedbackEl.className = "mt-4 p-4 rounded-lg bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 text-sm font-medium text-center transition-opacity";
+            
+            } else if (itemType === 'nad' && simState === 1) {
+                // Step 2
+                simState = 2;
+                document.getElementById('btn-nad').classList.add('opacity-50', 'pointer-events-none', 'ring-2', 'ring-green-500');
+                
+                const slotNad = document.getElementById('slot-nad');
+                slotNad.innerHTML = `<div class="font-bold text-blue-600 dark:text-blue-400">NAD<sup>+</sup></div>`;
+                slotNad.style.borderColor = '#3b82f6';
+                slotNad.classList.replace('border-dashed', 'border-solid');
+
+                // Unlock next item
+                document.getElementById('btn-koa').classList.remove('opacity-50', 'pointer-events-none');
+                
+                feedbackEl.textContent = "Oksidasi terjadi! 1 atom Karbon lepas menjadi CO2, NAD+ berubah jadi NADH. Terakhir, tambahkan Koenzim-A.";
+                feedbackEl.className = "mt-4 p-4 rounded-lg bg-orange-50 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 text-sm font-medium text-center transition-opacity";
+
+            } else if (itemType === 'koa' && simState === 2) {
+                // Step 3 (Finish)
+                simState = 3;
+                document.getElementById('btn-koa').classList.add('opacity-50', 'pointer-events-none', 'ring-2', 'ring-green-500');
+                
+                const slotKoa = document.getElementById('slot-koa');
+                slotKoa.innerHTML = `<div class="font-bold text-green-600 dark:text-green-400">Ko-A</div>`;
+                slotKoa.style.borderColor = '#22c55e';
+                slotKoa.classList.replace('border-dashed', 'border-solid');
+
+                // Tampilkan hasil akhir
+                setTimeout(() => {
+                    document.getElementById('slot-piruvat').style.display = 'none';
+                    document.getElementById('process-area').style.display = 'none';
+                    document.getElementById('result-area').style.display = 'flex';
+                    
+                    feedbackEl.textContent = "Luar Biasa! Reaksi selesai. Asetil Ko-A (2C) terbentuk dan siap masuk Siklus Krebs.";
+                    feedbackEl.className = "mt-4 p-4 rounded-lg bg-green-50 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-sm font-bold text-center transition-opacity";
+                }, 800);
+            }
+        }
+
+        function resetSim() {
+            simState = 0;
+            // Reset Buttons
+            ['btn-piruvat', 'btn-nad', 'btn-koa'].forEach(id => {
+                const btn = document.getElementById(id);
+                btn.className = `sim-item w-full text-left p-3 rounded-lg border-2 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 hover:border-mito flex items-center justify-between transition-opacity ${id !== 'btn-piruvat' ? 'opacity-50 pointer-events-none' : ''}`;
+            });
+            
+            // Reset Zones
+            const slotP = document.getElementById('slot-piruvat');
+            slotP.style = "";
+            slotP.className = "sim-zone w-full h-16 rounded-lg flex items-center justify-center text-slate-400 text-sm border-dashed";
+            slotP.innerHTML = "1. Masukkan Asam Piruvat";
+
+            const slotN = document.getElementById('slot-nad');
+            slotN.style = "";
+            slotN.className = "sim-zone w-2/5 h-16 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs text-center p-2 border-dashed";
+            slotN.innerHTML = "2. Tambahkan NAD+";
+
+            const slotK = document.getElementById('slot-koa');
+            slotK.style = "";
+            slotK.className = "sim-zone w-2/5 h-16 rounded-lg flex flex-col items-center justify-center text-slate-400 text-xs text-center p-2 border-dashed";
+            slotK.innerHTML = "3. Masukkan Ko-A";
+
+            // Reset Visibility
+            document.getElementById('slot-piruvat').style.display = 'flex';
+            document.getElementById('process-area').classList.add('hidden');
+            document.getElementById('process-area').style.display = 'flex';
+            document.getElementById('result-area').style.display = 'none';
+            document.getElementById('result-area').classList.add('hidden');
+            
+            // Reset Feedback
+            feedbackEl.textContent = "Pilih Asam Piruvat terlebih dahulu untuk memulai reaksi.";
+            feedbackEl.className = "mt-4 p-4 rounded-lg bg-blue-50 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 text-sm font-medium text-center transition-opacity";
+        }
+
+        // 3. Evaluasi & Quiz State
+        // Kunci Jawaban: 1=C (Matriks), 2=B (2 Asetil Ko-A, 2 CO2, 2 NADH), 3=C (CO2), 4=T (Benar), 5=F (Salah - tidak hasil ATP bebas)
+        const answers = {
+            1: 'C', 2: 'B', 3: 'C', 4: 'T', 5: 'F'
+        };
+        let userSelections = {};
+
+        function selectOption(btn, questionNum, option) {
+            const parent = btn.closest('.quiz-question');
+            parent.querySelectorAll('.option-btn').forEach(b => {
+                b.classList.remove('selected', 'border-mito', 'bg-orange-50', 'dark:bg-orange-900/30', 'dark:border-mito');
+            });
+            
+            btn.classList.add('selected');
+            userSelections[questionNum] = option;
+        }
+
+        function selectTF(btn, questionNum, option) {
+            const parent = btn.closest('.tf-question');
+            parent.querySelectorAll('.tf-btn').forEach(b => {
+                b.classList.remove('bg-mito', 'text-white', 'border-mito-dark');
+            });
+            
+            btn.classList.add('bg-mito', 'text-white', 'border-mito-dark');
+            userSelections[questionNum] = option;
+        }
+
+        function calculateScore() {
+            let correctCount = 0;
+            const totalQuestions = 5; 
+            for (let q in answers) {
+                if (userSelections[q] === answers[q]) correctCount++;
+            }
+            return (correctCount / totalQuestions) * 100;
+        }
+
+        function highlightAnswers() {
+            // Highlight Pilihan Ganda (1-3)
+            for(let i=1; i<=3; i++) {
+                const qDiv = document.querySelector(`.quiz-question[data-question="${i}"]`);
+                if(!qDiv) continue;
+                
+                const btns = qDiv.querySelectorAll('.option-btn');
+                const userAns = userSelections[i];
+                const correctAns = answers[i];
+                
+                btns.forEach(b => {
+                    b.onclick = null; 
+                    b.style.cursor = 'default';
+                    const optionLetter = b.textContent.charAt(0);
+                    
+                    if(optionLetter === correctAns) {
+                        b.classList.add('correct');
+                    } else if (optionLetter === userAns && userAns !== correctAns) {
+                        b.classList.add('wrong');
+                    }
+                });
+            }
+            // Highlight True/False (4-5) - Sederhana matikan click
+            document.querySelectorAll('.tf-btn').forEach(b => {
+                b.onclick = null;
+                b.style.cursor = 'default';
+                b.classList.add('opacity-80');
+            });
+        }
+
+        // 4. SCORM 1.2 Integration API (Aman Cross-Origin)
+        let scormAPI = null;
+        let isScormConnected = false;
+
+        function getAPI() {
+            let win = window;
+            let findAttempts = 0;
+            let api = null;
+            
+            try {
+                while ((win.API == null) && (win.parent != null) && (win.parent != win)) {
+                    findAttempts++;
+                    if (findAttempts > 7) break;
+                    win = win.parent;
+                }
+                api = win.API;
+            } catch (e) {
+                console.warn("SecurityError ditangkap saat mencari SCORM API. Berjalan dalam mode mandiri (Preview).");
+                api = null;
+            }
+            return api;
+        }
+
+        function initSCORM() {
+            scormAPI = getAPI();
+            const statusEl = document.getElementById('scorm-status-panel');
+            const connectionText = document.getElementById('lms-connection');
+            
+            statusEl.classList.remove('hidden');
+
+            if (scormAPI) {
+                const initResult = scormAPI.LMSInitialize("");
+                if (initResult === "true") {
+                    isScormConnected = true;
+                    connectionText.textContent = "Terhubung (SCORM 1.2)";
+                    connectionText.className = "font-bold text-green-600 dark:text-green-400";
+                    
+                    const currentStatus = scormAPI.LMSGetValue("cmi.core.lesson_status");
+                    if (currentStatus === "not attempted" || currentStatus === "unknown") {
+                        scormAPI.LMSSetValue("cmi.core.lesson_status", "incomplete");
+                        scormAPI.LMSCommit("");
+                    }
+                } else {
+                    connectionText.textContent = "Gagal Inisialisasi LMS";
+                    connectionText.className = "font-bold text-red-500";
+                }
+            } else {
+                connectionText.textContent = "Berjalan Mandiri (Tidak ada LMS)";
+                connectionText.className = "font-bold text-slate-500";
+            }
+        }
+
+        window.addEventListener('load', initSCORM);
+        
+        window.addEventListener('beforeunload', function() {
+            if (isScormConnected && scormAPI) {
+                scormAPI.LMSCommit("");
+                scormAPI.LMSFinish("");
+            }
+        });
+
+        // Eksekusi Submit & Kirim SCORM
+        function submitScore() {
+            if (Object.keys(userSelections).length < 5) {
+                showModal("Perhatian", "Anda belum menyelesaikan semua soal. Mohon jawab seluruh 3 soal Evaluasi dan 2 soal Refleksi.");
+                return;
+            }
+
+            const score = calculateScore();
+            const passMark = 75;
+            const isPassed = score >= passMark;
+            
+            const resultDisplay = document.getElementById('result-display');
+            const scoreText = document.getElementById('final-score-text');
+            const statusText = document.getElementById('final-status-text');
+            const btnSubmit = document.getElementById('btn-submit');
+            
+            resultDisplay.classList.remove('hidden');
+            scoreText.textContent = `Skor Akhir: ${score}/100`;
+            btnSubmit.disabled = true;
+            btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+            btnSubmit.textContent = "Terkirim";
+            
+            highlightAnswers();
+            
+            if (isPassed) {
+                resultDisplay.classList.add('bg-green-100', 'text-green-800', 'dark:bg-green-900/40', 'dark:text-green-300', 'border', 'border-green-300');
+                statusText.textContent = "Luar Biasa! Anda Tuntas (Passed).";
+            } else {
+                resultDisplay.classList.add('bg-orange-100', 'text-orange-800', 'dark:bg-orange-900/40', 'dark:text-orange-300', 'border', 'border-orange-300');
+                statusText.textContent = "Belum memenuhi KKM (Completed). Silakan baca kembali materi.";
+            }
+
+            if (isScormConnected && scormAPI) {
+                try {
+                    scormAPI.LMSSetValue("cmi.core.score.raw", score.toString());
+                    scormAPI.LMSSetValue("cmi.core.score.min", "0");
+                    scormAPI.LMSSetValue("cmi.core.score.max", "100");
+                    
+                    const lessonStatus = isPassed ? "passed" : "completed";
+                    scormAPI.LMSSetValue("cmi.core.lesson_status", lessonStatus);
+                    
+                    const commitRes = scormAPI.LMSCommit("");
+                    if (commitRes === "true") {
+                        showModal("Sukses", `Nilai ${score} berhasil disimpan ke sistem LMS.`);
+                    } else {
+                        showModal("Peringatan", "Gagal menyimpan data. Kode Error: " + scormAPI.LMSGetLastError());
+                    }
+                } catch (e) {
+                    showModal("Error", "Terjadi kesalahan sistem saat komunikasi dengan LMS.");
+                }
+            } else {
+                showModal("Informasi Mode Mandiri", `Anda mendapatkan skor ${score}. Karena Anda sedang mengakses diluar LMS (mode mandiri/preview), nilai tidak dikirim ke server.`);
+            }
+        }
+    </script>
+</body>
+</html>
